@@ -1,2 +1,6 @@
 .ipynb_checkpoints/
 *-working.ipynb
+collect_weather_day1.py
+.vscode/
+collect_weather_day2.py
+weather.py
