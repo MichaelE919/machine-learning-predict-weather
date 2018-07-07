@@ -4,3 +4,4 @@ collect_weather_day1.py
 .vscode/
 collect_weather_day2.py
 weather.py
+tf_wx_model/
