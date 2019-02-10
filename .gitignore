@@ -3,3 +3,4 @@
 .vscode/
 tf_wx_model/
 *.csv
+__pycache__
