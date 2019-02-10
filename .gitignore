@@ -3,4 +3,5 @@
 .vscode/
 tf_wx_model/
 *.csv
+*.pkl
 __pycache__
