@@ -6,13 +6,20 @@ from datetime import datetime, timedelta
 import requests
 from pyprind import ProgBar
 
+loc = '30.578806,-97.853065'
+
 API_KEY = os.environ.get('MY_API_KEY')
-BASE_URL = 'http://api.wunderground.com/api/{}/history_{}/q/TX/Round_Rock.json'
+BASE_URL = 'https://api.darksky.net/forecast/{}/{},{}'
 
 features = [
-    "date", "meantempm", "meandewptm", "meanpressurem", "maxhumidity",
-    "minhumidity", "maxtempm", "mintempm", "maxdewptm", "mindewptm",
-    "maxpressurem", "minpressurem", "precipm"
+    'date',
+    'temperatureMean',
+    'dewPoint',
+    'pressure',
+    'humidity',
+    'temperatureMax',
+    'temperatureMin',
+    'precipProbability',
 ]
 DailySummary = namedtuple('DailySummary', features)
 
@@ -22,26 +29,52 @@ def extract_weather_data(url, api_key, target_date, days):
     records = []
     bar = ProgBar(days)
     for _ in range(days):
-        request = BASE_URL.format(API_KEY, target_date.strftime('%Y%m%d'))
+        request = BASE_URL.format(
+            API_KEY, loc, target_date.strftime('%Y-%m-%dT%H:%M:%S')
+        )
         response = requests.get(request)
         if response.status_code == 200:
-            data = response.json()['history']['dailysummary'][0]
-            records.append(
-                DailySummary(
-                    date=target_date,
-                    meantempm=data['meantempm'],
-                    meandewptm=data['meandewptm'],
-                    meanpressurem=data['meanpressurem'],
-                    maxhumidity=data['maxhumidity'],
-                    minhumidity=data['minhumidity'],
-                    maxtempm=data['maxtempm'],
-                    mintempm=data['mintempm'],
-                    maxdewptm=data['maxdewptm'],
-                    mindewptm=data['mindewptm'],
-                    maxpressurem=data['maxpressurem'],
-                    minpressurem=data['minpressurem'],
-                    precipm=data['precipm']))
-        time.sleep(6)
+
+            def get_mean_temp():
+                """Return average temperature across a 24 hour period."""
+                total_temp = 0
+                for i in range(len(hdata)):
+                    try:
+                        total_temp += hdata[i]['temperature']
+                    except KeyError:
+                        total_temp += hdata[i-1]['temperature']
+                meanTemp = total_temp / 24
+                return meanTemp
+
+            data = response.json()['daily']['data'][0]
+            hdata = response.json()['hourly']['data']
+            try:
+                records.append(
+                    DailySummary(
+                        date=target_date,
+                        temperatureMean=get_mean_temp(),
+                        dewPoint=data['dewPoint'],
+                        pressure=data['pressure'],
+                        humidity=data['humidity'],
+                        temperatureMax=data['temperatureMax'],
+                        temperatureMin=data['temperatureMin'],
+                        precipProbability=data['precipProbability'],
+                    )
+                )
+            except KeyError:
+                records.append(
+                    DailySummary(
+                        date=target_date,
+                        temperatureMean=get_mean_temp(),
+                        dewPoint=data['dewPoint'],
+                        pressure=data['pressure'],
+                        humidity=data['humidity'],
+                        temperatureMax=data['temperatureMax'],
+                        temperatureMin=data['temperatureMin'],
+                        precipProbability=0,
+                    )
+                )
+        # time.sleep(6)
         bar.update()
         target_date += timedelta(days=1)
     return records

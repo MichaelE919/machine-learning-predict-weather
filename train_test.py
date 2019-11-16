@@ -9,25 +9,23 @@ from sklearn.model_selection import train_test_split
 with open('end-part1_df.pkl', 'rb') as fp:
     df = pickle.load(fp)
 
-df_corr = df.corr()[['meantempm']].sort_values('meantempm')
-df_corr_fil = df_corr[abs(df_corr['meantempm']) > 0.55]
+df_corr = df.corr()[['temperatureMean']].sort_values('temperatureMean')
+df_corr_fil = df_corr[abs(df_corr['temperatureMean']) > 0.55]
 
-unwanted = ['mintempm', 'maxtempm', 'meantempm']
+unwanted = ['temperatureMin', 'temperatureMax', 'temperatureMean']
 predictors = df_corr_fil.index.tolist()
 predictors = [i for i in predictors if i not in unwanted]
 
-df2 = df[['meantempm'] + predictors]
+df2 = df[['temperatureMean'] + predictors]
 
 X = df2[predictors]
-y = df2['meantempm']
+y = df2['temperatureMean']
 alpha = 0.05
 
 
-def stepwise_selection(X,
-                       y,
-                       initial_list=predictors,
-                       threshold_out=alpha,
-                       verbose=True):
+def stepwise_selection(
+    X, y, initial_list=predictors, threshold_out=alpha, verbose=True
+):
     """ Perform a forward-backward feature selection
     based on p-value from statsmodels.api.OLS
     Arguments:
@@ -52,8 +50,7 @@ def stepwise_selection(X,
             worst_feature = pvalues.idxmax()
             included.remove(worst_feature)
             if verbose:
-                print('Drop {:30} with p-value {:.6}'.format(
-                    worst_feature, worst_pval))
+                print('Drop {:30} with p-value {:.6}'.format(worst_feature, worst_pval))
         if not changed:
             break
     return included
@@ -69,7 +66,8 @@ model = sm.OLS(y, X).fit()
 print(model.summary())
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=12)
+    X, y, test_size=0.2, random_state=12
+)
 
 regressor = LinearRegression()
 
@@ -77,8 +75,10 @@ regressor.fit(X_train, y_train)
 
 prediction = regressor.predict(X_test)
 
-print('The Explained Variance: %.2f' % regressor.score(X_test, y_test))
-print('The Mean Absolute Error: %.2f degrees celcius' % mean_absolute_error(
-    y_test, prediction))
-print('The Median Absolute Error: %.2f degrees celcius' %
-      median_absolute_error(y_test, prediction))
+print(f'The Explained Variance: {regressor.score(X_test, y_test):.2f}')
+print(
+    f'The Mean Absolute Error: {mean_absolute_error(y_test, prediction):.2f} degrees celcius'
+)
+print(
+    f'The Median Absolute Error: {median_absolute_error(y_test, prediction):.2f} degrees celcius'
+)

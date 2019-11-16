@@ -2,29 +2,23 @@ import pickle
 
 import pandas as pd
 
-from weather import features
+from weather import derive_nth_day_feature, features
 
 with open('records_pt2.pkl', 'rb') as fp:
     records = pickle.load(fp)
 
 df = pd.DataFrame(records, columns=features).set_index('date')
 
-
-def derive_nth_day_feature(df, feature, N):
-    nth_prior_measurements = df[feature].shift(periods=N)
-    col_name = f'{feature}_{N}'
-    df[col_name] = nth_prior_measurements
-
-
 for feature in features:
     if feature != 'date':
         for N in range(1, 4):
             derive_nth_day_feature(df, feature, N)
 
-# make list of original features without meantempm, mintempm, and maxtempm
+# make list of original features without temperatureMean, temperatureMin, and temperatureMax
 to_remove = [
-    feature for feature in features
-    if feature not in ['meantempm', 'mintempm', 'maxtempm']
+    feature
+    for feature in features
+    if feature not in ['temperatureMean', 'temperatureMin', 'temperatureMax']
 ]
 
 # make a list of columns to keep
@@ -43,13 +37,12 @@ IQR = spread['75%'] - spread['25%']
 
 # create an outliers column which is either 3 IQRs below the first quartile or
 # 3 IQRs above the third quartile
-spread['outliers'] = (spread['min'] <
-                      (spread['25%'] -
-                       (3 * IQR))) | (spread['max'] >
-                                      (spread['75%'] + 3 * IQR))
+spread['outliers'] = (spread['min'] < (spread['25%'] - (3 * IQR))) | (
+    spread['max'] > (spread['75%'] + 3 * IQR)
+)
 
 # iterate over the precip columns
-for precip_col in ['precipm_1', 'precipm_2', 'precipm_3']:
+for precip_col in ['precipProbability_1', 'precipProbability_2', 'precipProbability_3']:
     # create a boolean array of values representing nans
     missing_vals = pd.isnull(df[precip_col])
     df[precip_col][missing_vals] = 0
