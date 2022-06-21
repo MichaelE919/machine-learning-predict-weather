@@ -19,7 +19,7 @@ Markdown==3.0.1
 mccabe==0.6.1
 mkl-fft==1.0.10
 mkl-random==1.0.2
-numpy==1.15.4
+numpy==1.22.0
 pandas==0.24.1
 patsy==0.5.1
 protobuf==3.6.1
